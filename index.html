@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semangat Ujian TKA!</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- MathJax for nice math rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
+                        arabic: ['Amiri', 'serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-fast': 'pulse 1s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 50%, #A1C4FD 100%);
+            min-height: 100vh;
+        }
+        .math-expr {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        .card-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+        }
+        .btn-bounce {
+            transition: all 0.2s ease;
+        }
+        .btn-bounce:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
+        .btn-bounce:active {
+            transform: translateY(1px) scale(0.98);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 min-h-screen overflow-x-hidden">
+
+    <canvas id="confetti-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-50"></canvas>
+
+    <div class="w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 card-shadow border-4 border-white transition-all duration-500 relative overflow-hidden my-6">
+        
+        <!-- Decoration elements -->
+        <div class="absolute -top-10 -right-10 w-28 h-28 bg-yellow-300 rounded-full blur-xl opacity-60"></div>
+        <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-pink-400 rounded-full blur-xl opacity-60"></div>
+
+        <!-- ================= EXPLANATION MODAL / POPUP ================= -->
+        <div id="explanation-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border-4 border-amber-300 animate-bounce-slow text-center relative max-h-[90vh] overflow-y-auto">
+                <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <h3 class="text-xl font-bold font-fredoka text-amber-800 mb-1">Ops, Jawaban Belum Tepat!</h3>
+                <p class="text-xs text-gray-500 mb-4">Yuk pelajari dulu pembahasan lengkapnya di bawah ini:</p>
+
+                <div class="bg-amber-50 rounded-2xl p-4 text-left border border-amber-200 text-sm text-gray-700 mb-5 space-y-2 font-medium" id="explanation-text">
+                    <!-- Dynamic explanation content goes here -->
+                </div>
+
+                <button onclick="closeExplanationModal()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-2xl shadow-lg hover:opacity-95 btn-bounce flex items-center justify-center gap-2">
+                    Saya Paham, Lanjut Soal Berikutnya <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 1: NAME INPUT ================= -->
+        <div id="page-name" class="page-content block">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full mx-auto flex items-center justify-center shadow-lg animate-float mb-4">
+                    <i class="fa-solid fa-graduation-cap text-3xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold font-fredoka text-purple-800 mb-2">Halo Teman Juang! 👋</h1>
+                <p class="text-gray-600 text-sm">Masukkan nama lengkapmu terlebih dahulu untuk memulai petualangan ini!</p>
+            </div>
+
+            <form id="form-name" onsubmit="submitName(event)" class="space-y-4">
+                <div>
+                    <label for="userName" class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="userName" required placeholder="Contoh: Budi Santoso" class="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition text-gray-800 font-medium">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white font-bold rounded-2xl shadow-lg hover:opacity-95 btn-bounce text-lg flex items-center justify-center gap-2">
+                    Mulai Kerjakan <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- ================= PAGE 2: QUESTION 1 (Limit) ================= -->
+        <div id="page-q1" class="page-content hidden">
+            <div class="flex items-center justify-between mb-4">
+                <span class="px-3 py-1 bg-purple-100 text-purple-700 font-bold rounded-full text-xs uppercase tracking-wide">Soal 1 / Limit</span>
+                <span class="display-user-name text-xs font-semibold text-purple-600"></span>
+            </div>
+
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white text-center shadow-md mb-6">
+                <p class="text-xs font-medium text-indigo-100 mb-2">Hitunglah nilai dari:</p>
+                <div class="text-2xl sm:text-3xl font-bold math-expr my-2">
+                    \(\lim_{x \to 2} (x^2 + 2x + 18)\)
+                </div>
+            </div>
+
+            <p class="text-sm font-medium text-gray-600 mb-3 text-center">Pilih jawaban yang benar:</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="checkQ1('A')" class="p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-500 hover:text-white font-bold text-lg text-purple-800 transition btn-bounce shadow-sm">
+                    A. 26
+                </button>
+                <button onclick="checkQ1('B')" class="p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-500 hover:text-white font-bold text-lg text-purple-800 transition btn-bounce shadow-sm">
+                    B. 8
+                </button>
+                <button onclick="checkQ1('C')" class="p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-500 hover:text-white font-bold text-lg text-purple-800 transition btn-bounce shadow-sm">
+                    C. 30
+                </button>
+                <button onclick="checkQ1('D')" class="p-4 rounded-2xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-500 hover:text-white font-bold text-lg text-purple-800 transition btn-bounce shadow-sm">
+                    D. 24
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 3: QUESTION 2 (Alternative Limit) ================= -->
+        <div id="page-q2" class="page-content hidden">
+            <div class="flex items-center justify-between mb-4">
+                <span class="px-3 py-1 bg-amber-100 text-amber-700 font-bold rounded-full text-xs uppercase tracking-wide">Soal 2 / Limit Remedial</span>
+                <span class="text-xs font-semibold text-rose-500"><i class="fa-solid fa-triangle-exclamation"></i> Coba Lagi!</span>
+            </div>
+
+            <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white text-center shadow-md mb-6">
+                <p class="text-xs font-medium text-amber-100 mb-2">Hitunglah nilai dari:</p>
+                <div class="text-2xl sm:text-3xl font-bold math-expr my-2">
+                    \(\lim_{x \to 3} (2x^2 - 4x + 5)\)
+                </div>
+            </div>
+
+            <p class="text-sm font-medium text-gray-600 mb-3 text-center">Pilih jawaban yang tepat:</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="checkQ2('A')" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-500 hover:text-white font-bold text-lg text-orange-800 transition btn-bounce shadow-sm">
+                    A. 15
+                </button>
+                <button onclick="checkQ2('B')" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-500 hover:text-white font-bold text-lg text-orange-800 transition btn-bounce shadow-sm">
+                    B. 11
+                </button>
+                <button onclick="checkQ2('C')" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-500 hover:text-white font-bold text-lg text-orange-800 transition btn-bounce shadow-sm">
+                    C. 18
+                </button>
+                <button onclick="checkQ2('D')" class="p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-500 hover:text-white font-bold text-lg text-orange-800 transition btn-bounce shadow-sm">
+                    D. 20
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 4: QUESTION 3 (Function f(x)) ================= -->
+        <div id="page-q3" class="page-content hidden">
+            <div class="flex items-center justify-between mb-4">
+                <span class="px-3 py-1 bg-pink-100 text-pink-700 font-bold rounded-full text-xs uppercase tracking-wide">Soal 3 / Fungsi f(x)</span>
+                <span class="text-xs font-semibold text-pink-600">Kesempatan Terakhir!</span>
+            </div>
+
+            <div class="bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl p-6 text-white text-center shadow-md mb-6">
+                <p class="text-xs font-medium text-pink-100 mb-1">Diketahui \(f(x) = 3x^2 - 5x + 7\).</p>
+                <p class="text-xs font-medium text-pink-100">Berapakah nilai dari \(f(4)\)?</p>
+                <div class="text-2xl sm:text-3xl font-bold math-expr my-2">
+                    \(f(4) = ?\)
+                </div>
+            </div>
+
+            <p class="text-sm font-medium text-gray-600 mb-3 text-center">Pilih jawabanmu:</p>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="checkQ3('A')" class="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50 hover:bg-pink-500 hover:text-white font-bold text-lg text-pink-800 transition btn-bounce shadow-sm">
+                    A. 25
+                </button>
+                <button onclick="checkQ3('B')" class="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50 hover:bg-pink-500 hover:text-white font-bold text-lg text-pink-800 transition btn-bounce shadow-sm">
+                    B. 35
+                </button>
+                <button onclick="checkQ3('C')" class="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50 hover:bg-pink-500 hover:text-white font-bold text-lg text-pink-800 transition btn-bounce shadow-sm">
+                    C. 40
+                </button>
+                <button onclick="checkQ3('D')" class="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50 hover:bg-pink-500 hover:text-white font-bold text-lg text-pink-800 transition btn-bounce shadow-sm">
+                    D. 28
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= PAGE: EVALUATION / MOTIVATION FOR PRACTICE ================= -->
+        <div id="page-practice" class="page-content hidden text-center">
+            <div class="w-24 h-24 bg-gradient-to-tr from-amber-400 to-red-400 rounded-full mx-auto flex items-center justify-center shadow-lg animate-bounce-slow mb-4">
+                <i class="fa-solid fa-book-open-reader text-4xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold font-fredoka text-gray-800 mb-2">Tetap Semangat, <span class="student-name text-purple-600"></span>! 💪</h2>
+            <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-xl text-left mb-6 my-4">
+                <p class="text-sm text-amber-800 leading-relaxed font-medium">
+                    Jangan berkecil hati ya! Kesalahan dalam latihan adalah proses menuju pemahaman yang lebih baik. Yuk, luangkan waktu sebentar untuk latihan soal dan review materi lagi! Kamu pasti bisa! 🚀
+                </p>
+            </div>
+            <button onclick="goToPage('page-encouragement')" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-2xl shadow-lg hover:opacity-95 btn-bounce text-lg flex items-center justify-center gap-2">
+                Lanjut ke Pesan Semangat <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- ================= PAGE: ENCOURAGEMENT & TKA PRAYER ================= -->
+        <div id="page-encouragement" class="page-content hidden text-center">
+            <div class="w-24 h-24 bg-gradient-to-tr from-green-400 to-emerald-600 rounded-full mx-auto flex items-center justify-center shadow-lg animate-bounce-slow mb-4">
+                <i class="fa-solid fa-trophy text-4xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold font-fredoka text-emerald-800 mb-2">Semangat Ujian TKA! 🎉</h2>
+            <p class="text-gray-600 text-sm mb-4">Untuk Sahabat Terbaikku, <strong class="student-name text-purple-600"></strong></p>
+
+            <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-2xl border border-purple-100 text-left space-y-3 mb-6 shadow-inner">
+                <p class="text-gray-700 text-sm leading-relaxed font-medium">
+                    ✨ "Semoga setiap perjuangan dan persiapan yang telah kamu lalui membuahkan hasil yang sangat manis. Tetap tenang, percaya diri, dan teliti dalam menjawab setiap soal TKA nanti!"
+                </p>
+                <p class="text-gray-700 text-sm leading-relaxed font-medium">
+                    🎯 "Aku mendoakan yang terbaik agar kamu mendapatkan <strong>NILAI TERTINGGI & IMPIAN MAKSIMAL!</strong> Kamu hebat dan pasti bisa melewatinya dengan sukses!"
+                </p>
+            </div>
+
+            <button onclick="goToPage('page-prayer')" class="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white font-bold rounded-2xl shadow-lg hover:opacity-95 btn-bounce text-lg flex items-center justify-center gap-2">
+                Lanjut ke Doa Kelancaran Ujian <i class="fa-solid fa-hands-praying"></i>
+            </button>
+        </div>
+
+        <!-- ================= PAGE: PRAYER / AYAT DOA KELANCARAN UJIAN ================= -->
+        <div id="page-prayer" class="page-content hidden text-center">
+            <div class="w-20 h-20 bg-gradient-to-tr from-cyan-400 to-blue-600 rounded-full mx-auto flex items-center justify-center shadow-lg mb-3">
+                <i class="fa-solid fa-hands-praying text-3xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold font-fredoka text-blue-900 mb-1">Doa Kelancaran Ujian 🤲</h2>
+            <p class="text-xs text-gray-500 mb-4">Bacalah doa-doa ini sebelum memulai ujian agar diberi kemudahan & kelancaran:</p>
+
+            <div class="space-y-4 text-left max-h-[380px] overflow-y-auto pr-1">
+                
+                <!-- Doa 1: Nabi Musa (Kelancaran Lidah & Kemudahan) -->
+                <div class="bg-blue-50/80 p-4 rounded-2xl border border-blue-200 shadow-sm">
+                    <span class="inline-block px-2.5 py-0.5 bg-blue-200 text-blue-800 font-bold rounded-full text-[10px] mb-2"> Doa Kelancaran & Kelapangan Hati (QS. Thaha: 25-28)</span>
+                    <p class="text-right text-xl font-arabic leading-loose text-blue-950 font-semibold mb-2">
+                        رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي وَاحْلُلْ عُقْدَةً مِنْ لِسَانِي يَفْقَهُوا قَوْلِي
+                    </p>
+                    <p class="text-xs text-blue-900 italic mb-1">
+                        "Rabbish-rah lii shadrii, wa yassir lii amrii, wahlul 'uqdatam mil lisaanii, yafqahuu qaulii."
+                    </p>
+                    <p class="text-xs text-gray-600">
+                        <strong>Artinya:</strong> "Ya Tuhanku, lapangkanlah dadaku, mudahkanlah urusanku, dan melepaskan kekakuan dari lidahku, agar mereka mengerti perkataanku."
+                    </p>
+                </div>
+
+                <!-- Doa 2: Kemudahan Urusan -->
+                <div class="bg-cyan-50/80 p-4 rounded-2xl border border-cyan-200 shadow-sm">
+                    <span class="inline-block px-2.5 py-0.5 bg-cyan-200 text-cyan-800 font-bold rounded-full text-[10px] mb-2"> Doa Memohon Kemudahan Suatu Urusan</span>
+                    <p class="text-right text-xl font-arabic leading-loose text-cyan-950 font-semibold mb-2">
+                        اللَّهُمَّ لاَ سَهْلَ إِلاَّ مَا جَعَلْتَهُ سَهْلاً وَأَنْتَ تَجْعَلُ الحَزْنَ إِذَا شِئْتَ سَهْلاً
+                    </p>
+                    <p class="text-xs text-cyan-900 italic mb-1">
+                        "Allahumma laa sahla illaa maa ja'altahu sahlaa, wa anta taj'alul hazna idzaa syi'ta sahlaa."
+                    </p>
+                    <p class="text-xs text-gray-600">
+                        <strong>Artinya:</strong> "Ya Allah, tidak ada kemudahan kecuali apa yang Engkau jadikan mudah. Dan Engkau menjadikan kesukaran itu mudah apabila Engkau menghendaki."
+                    </p>
+                </div>
+
+                <!-- Doa 3: Tambahan Ilmu & Pemahaman -->
+                <div class="bg-teal-50/80 p-4 rounded-2xl border border-teal-200 shadow-sm">
+                    <span class="inline-block px-2.5 py-0.5 bg-teal-200 text-teal-800 font-bold rounded-full text-[10px] mb-2"> Doa Tambahan Ilmu & Pemahaman</span>
+                    <p class="text-right text-xl font-arabic leading-loose text-teal-950 font-semibold mb-2">
+                        رَبِّ زِدْنِي عِلْمًا وَارْزُقْنِي فَهْمًا
+                    </p>
+                    <p class="text-xs text-teal-900 italic mb-1">
+                        "Rabbi zidnii 'ilman warzuqnii fahman."
+                    </p>
+                    <p class="text-xs text-gray-600">
+                        <strong>Artinya:</strong> "Ya Tuhanku, tambahkanlah kepadaku ilmu pengetahuan dan berilah aku karunia untuk memahaminya."
+                    </p>
+                </div>
+
+            </div>
+
+            <button onclick="restartApp()" class="w-full mt-5 py-3.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:opacity-95 btn-bounce text-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-left"></i> Ulangi Dari Awal
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Global variables
+        let currentUserName = '';
+        let nextTargetPage = '';
+
+        // Explanations repository
+        const explanations = {
+            q1: `
+                <p class="font-bold text-amber-900 mb-1">Pembahasan Soal 1 (Limit):</p>
+                <p>Gunakan teknik <strong>substitusi langsung</strong> dengan memasukkan nilai \\(x = 2\\):</p>
+                <div class="my-2 bg-white p-2 rounded border border-amber-200 text-center">
+                    \\(\\lim_{x \\to 2} (x^2 + 2x + 18)\\)<br>
+                    \\(= (2)^2 + 2(2) + 18\\)<br>
+                    \\(= 4 + 4 + 18 = 26\\)
+                </div>
+                <p class="text-xs text-emerald-700 font-semibold">Jawaban yang benar adalah <strong>A. 26</strong>.</p>
+            `,
+            q2: `
+                <p class="font-bold text-amber-900 mb-1">Pembahasan Soal 2 (Limit Remedial):</p>
+                <p>Gunakan teknik <strong>substitusi langsung</strong> dengan memasukkan nilai \\(x = 3\\):</p>
+                <div class="my-2 bg-white p-2 rounded border border-amber-200 text-center">
+                    \\(\\lim_{x \\to 3} (2x^2 - 4x + 5)\\)<br>
+                    \\(= 2(3)^2 - 4(3) + 5\\)<br>
+                    \\(= 2(9) - 12 + 5\\)<br>
+                    \\(= 18 - 12 + 5 = 11\\)
+                </div>
+                <p class="text-xs text-emerald-700 font-semibold">Jawaban yang benar adalah <strong>B. 11</strong>.</p>
+            `,
+            q3: `
+                <p class="font-bold text-amber-900 mb-1">Pembahasan Soal 3 (Fungsi f(x)):</p>
+                <p>Substitusikan nilai \\(x = 4\\) ke dalam fungsi \\(f(x) = 3x^2 - 5x + 7\\):</p>
+                <div class="my-2 bg-white p-2 rounded border border-amber-200 text-center">
+                    \\(f(4) = 3(4)^2 - 5(4) + 7\\)<br>
+                    \\(f(4) = 3(16) - 20 + 7\\)<br>
+                    \\(f(4) = 48 - 20 + 7 = 35\\)
+                </div>
+                <p class="text-xs text-emerald-700 font-semibold">Jawaban yang benar adalah <strong>B. 35</strong>.</p>
+            `
+        };
+
+        // Confetti effect trigger
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Helper to trigger page switching with animation
+        function goToPage(pageId) {
+            const pages = document.querySelectorAll('.page-content');
+            pages.forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('block');
+            });
+
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('block');
+            }
+
+            // Re-render MathJax formula if present on target page
+            if (window.MathJax && window.MathJax.typeset) {
+                window.MathJax.typeset();
+            }
+        }
+
+        // Handle user name submission
+        function submitName(event) {
+            event.preventDefault();
+            const input = document.getElementById('userName');
+            if (input && input.value.trim() !== '') {
+                currentUserName = input.value.trim();
+                
+                // Update name across all dynamic labels
+                document.querySelectorAll('.student-name, .display-user-name').forEach(el => {
+                    el.textContent = currentUserName;
+                });
+
+                goToPage('page-q1');
+            }
+        }
+
+        // Display explanation modal popup
+        function showExplanationModal(text, nextPage) {
+            nextTargetPage = nextPage;
+            const modal = document.getElementById('explanation-modal');
+            const explanationContainer = document.getElementById('explanation-text');
+            
+            explanationContainer.innerHTML = text;
+            modal.classList.remove('hidden');
+
+            if (window.MathJax && window.MathJax.typeset) {
+                window.MathJax.typeset();
+            }
+        }
+
+        // Close explanation modal & go to target page
+        function closeExplanationModal() {
+            const modal = document.getElementById('explanation-modal');
+            modal.classList.add('hidden');
+            if (nextTargetPage) {
+                goToPage(nextTargetPage);
+            }
+        }
+
+        // Question 1 checker logic
+        function checkQ1(answer) {
+            if (answer === 'A') { // Correct answer = A
+                triggerConfetti();
+                goToPage('page-encouragement');
+            } else {
+                showExplanationModal(explanations.q1, 'page-q2');
+            }
+        }
+
+        // Question 2 checker logic
+        function checkQ2(answer) {
+            if (answer === 'B') { // Correct answer = B
+                triggerConfetti();
+                goToPage('page-encouragement');
+            } else {
+                showExplanationModal(explanations.q2, 'page-q3');
+            }
+        }
+
+        // Question 3 checker logic
+        function checkQ3(answer) {
+            if (answer === 'B') { // Correct answer = B
+                triggerConfetti();
+                goToPage('page-encouragement');
+            } else {
+                showExplanationModal(explanations.q3, 'page-practice');
+            }
+        }
+
+        // Reset App to beginning
+        function restartApp() {
+            document.getElementById('userName').value = '';
+            goToPage('page-name');
+        }
+    </script>
+</body>
+</html>
